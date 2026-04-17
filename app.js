@@ -43,6 +43,14 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     location.reload();
 });
 
+// Ensure data refreshes when the device wakes up or the tab is brought to front
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        console.log("Tab became visible - refreshing data.");
+        fetchData();
+    }
+});
+
 async function fetchData() {
     try {
         const now = new Date();
