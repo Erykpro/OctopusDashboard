@@ -109,8 +109,12 @@ function updateUI(rates) {
         nextPriceEl.innerText = "TBC";
     }
 
+    // Calculate cheapest upcoming 3-hour window
     cheapestSlotEl.innerText = findCheapestDaytime3HourSlot(rates);
-    applyRAGStatus(price);
+
+    // Calculate daily average and apply dynamic colors
+    const dailyAverage = calculateDailyAverage(rates);
+    applyRAGStatus(price, dailyAverage);
 }
 
 function findCheapestDaytime3HourSlot(rates) {
@@ -162,9 +166,41 @@ function findCheapestDaytime3HourSlot(rates) {
     return prefix;
 }
 
-function applyRAGStatus(price) {
-    let bgColor = price < 0 ? '#2563eb' : price < 15 ? '#16a34a' : price < 25 ? '#d97706' : '#dc2626';
-    document.body.style.backgroundColor = bgColor;
+function calculateDailyAverage(rates) {
+    const today = new Date().toDateString();
+    
+    // Filter the array to only include slots for the current calendar day
+    const todaysRates = rates.filter(r => new Date(r.valid_from).toDateString() === today);
+    
+    // Fallback just in case the array is empty
+    if (todaysRates.length === 0) return 15; 
+
+    // Sum all the rates and divide by the number of slots
+    const sum = todaysRates.reduce((acc, curr) => acc + curr.value_inc_vat, 0);
+    return sum / todaysRates.length;
+}
+
+function applyRAGStatus(price, average) {
+    const body = document.body;
+    
+    // Remove old classes
+    body.classList.remove(
+        'bg-blue-600', 'bg-green-500', 'bg-yellow-500', 
+        'bg-orange-500', 'bg-red-600', 'bg-gray-900'
+    );
+
+    // Dynamic 5-Tier Logic
+    if (price < 0) {
+        body.classList.add('bg-blue-600'); // Plunge: Always blue
+    } else if (price <= average * 0.8) {
+        body.classList.add('bg-green-500'); // Cheap: 20% below average
+    } else if (price <= average * 1.2) {
+        body.classList.add('bg-yellow-500'); // Fair: Around the average
+    } else if (price <= average * 1.5) {
+        body.classList.add('bg-orange-500'); // High: 50% above average
+    } else {
+        body.classList.add('bg-red-600'); // Peak: Very expensive
+    }
 }
 
 function scheduleNextUpdate() {
