@@ -98,7 +98,7 @@ function updateUI(rates) {
 
     const currentRate = rates[currentRateIndex];
     const price = currentRate.value_inc_vat;
-    currentPriceEl.innerText = price.toFixed(1);
+    currentPriceEl.innerText = Math.ceil(price);
     
     const nextRate = rates[currentRateIndex - 1]; 
     if (nextRate) {
