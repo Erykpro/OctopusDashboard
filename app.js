@@ -5,6 +5,7 @@ const currentPriceEl = document.getElementById('current-price');
 const nextTimeEl = document.getElementById('next-time');
 const nextPriceEl = document.getElementById('next-price');
 const lastUpdatedEl = document.getElementById('last-updated');
+const cheapestSlotEl = document.getElementById('cheapest-slot');
 
 // Your specific Regional Agile Tariff (Region M)
 const TARIFF_CODE = "E-1R-AGILE-24-10-01-M";
@@ -108,7 +109,57 @@ function updateUI(rates) {
         nextPriceEl.innerText = "TBC";
     }
 
+    cheapestSlotEl.innerText = findCheapestDaytime3HourSlot(rates);
     applyRAGStatus(price);
+}
+
+function findCheapestDaytime3HourSlot(rates) {
+    const now = new Date();
+    
+    // 1. Filter: Future rates ONLY, and strictly between 07:00 and 19:00
+    const futureDaytimeRates = rates.filter(r => {
+        const validFrom = new Date(r.valid_from);
+        const hour = validFrom.getHours();
+        return validFrom > now && hour >= 7 && hour < 19;
+    });
+
+    // 2. Sort chronologically
+    futureDaytimeRates.sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+
+    let minPrice = Infinity;
+    let bestStartTime = null;
+
+    // 3. Sliding Window: Check consecutive blocks of 6 slots (3 hours)
+    for (let i = 0; i <= futureDaytimeRates.length - 6; i++) {
+        const startSlot = new Date(futureDaytimeRates[i].valid_from);
+        const endSlot = new Date(futureDaytimeRates[i + 5].valid_from);
+        
+        // Safety check: Ensure the 3-hour block falls on the exact same day
+        if (startSlot.getDate() !== endSlot.getDate()) continue;
+
+        let windowSum = 0;
+        for (let j = 0; j < 6; j++) {
+            windowSum += futureDaytimeRates[i + j].value_inc_vat;
+        }
+
+        if (windowSum < minPrice) {
+            minPrice = windowSum;
+            bestStartTime = startSlot;
+        }
+    }
+
+    if (!bestStartTime) return "--:--";
+
+    // 4. Format the output with AM/PM and end time
+    const startTimeStr = bestStartTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+    
+    const endTime = new Date(bestStartTime.getTime() + 3 * 60 * 60 * 1000);
+    const endTimeStr = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+    
+    const isTomorrow = bestStartTime.getDate() !== now.getDate();
+    const prefix = isTomorrow ? `Tomorrow ${startTimeStr} - ${endTimeStr}` : `${startTimeStr} - ${endTimeStr}`;
+    
+    return prefix;
 }
 
 function applyRAGStatus(price) {
