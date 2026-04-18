@@ -56,48 +56,21 @@
 
         @media (orientation: landscape) and (max-height: 500px) {
             .widget-shell {
-                padding: 0.85rem 1rem;
+                padding: 0.5rem 0.75rem;
             }
 
             .frost-panel {
-                padding: 1rem;
+                padding: 0.75rem;
             }
         }
     </style>
 </head>
-<body class="min-h-screen text-white">
-    <div class="widget-shell relative flex min-h-screen w-full flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5">
+<body class="h-dvh overflow-hidden text-white">
+    <div class="widget-shell relative flex h-dvh w-full flex-col overflow-hidden px-4 pb-4 pt-2 sm:px-5 sm:pb-5 sm:pt-3">
             <section class="relative z-10 flex-1">
                 <div class="frost-panel flex h-full overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6">
-                    <div class="flex h-full w-full flex-col gap-4">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="text-sm font-medium tracking-[0.18em] text-white/35 uppercase">Octopus Agile Dashboard</div>
-                            <div class="flex shrink-0 gap-2">
-                                <button id="refresh-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/72 transition" aria-label="Refresh">
-                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="23 4 23 10 17 10"></polyline>
-                                        <polyline points="1 20 1 14 7 14"></polyline>
-                                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
-                                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
-                                    </svg>
-                                </button>
-                                <button id="reset-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/52 transition" aria-label="Reset">
-                                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 4v1"></path>
-                                        <path d="M12 19v1"></path>
-                                        <path d="M4.22 4.22l.7.7"></path>
-                                        <path d="M18.36 18.36l.7.7"></path>
-                                        <path d="M1 12h1"></path>
-                                        <path d="M22 12h1"></path>
-                                        <path d="M4.22 19.78l.7-.7"></path>
-                                        <path d="M18.36 5.64l.7-.7"></path>
-                                        <circle cx="12" cy="12" r="5"></circle>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-stretch">
+                    <div class="flex h-full w-full flex-col gap-3">
+                        <div class="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-stretch">
                             <div>
                                 <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Current rate</div>
                                 <div id="headline-text" class="mt-1 flex items-baseline gap-2 text-white">
@@ -117,10 +90,34 @@
                             </div>
                         </div>
 
-                        <div class="overflow-hidden rounded-[1.6rem] border border-white/[0.04] bg-black/18 px-4 pb-8 pt-4 sm:px-5">
+                        <div class="flex-1 overflow-hidden rounded-[1.6rem] border border-white/[0.04] bg-black/18 px-4 pb-7 pt-3 sm:px-5">
                             <div class="overflow-x-auto overflow-y-hidden">
-                                <div id="rate-chart" class="relative mt-1 inline-flex h-[42vh] min-h-[11rem] max-h-[18rem] min-w-full items-end gap-[3px] border-b border-white/10 pb-8"></div>
+                                <div id="rate-chart" class="relative mt-1 inline-flex h-[34dvh] min-h-[8rem] max-h-[14rem] min-w-full items-end gap-[3px] border-b border-white/10 pb-8 sm:h-[38dvh]"></div>
                             </div>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button id="refresh-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/72 transition" aria-label="Refresh">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <polyline points="1 20 1 14 7 14"></polyline>
+                                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                                    <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                                </svg>
+                            </button>
+                            <button id="reset-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/52 transition" aria-label="Reset">
+                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 4v1"></path>
+                                    <path d="M12 19v1"></path>
+                                    <path d="M4.22 4.22l.7.7"></path>
+                                    <path d="M18.36 18.36l.7.7"></path>
+                                    <path d="M1 12h1"></path>
+                                    <path d="M22 12h1"></path>
+                                    <path d="M4.22 19.78l.7-.7"></path>
+                                    <path d="M18.36 5.64l.7-.7"></path>
+                                    <circle cx="12" cy="12" r="5"></circle>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>

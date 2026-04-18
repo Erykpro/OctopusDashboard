@@ -81,7 +81,7 @@ function updateUI(rates) {
 
     const cheapestWindow = findCheapestDaytime3HourSlot(sortedRates);
 
-    headlineValueEl.innerText = currentRate.value_inc_vat.toFixed(2);
+    headlineValueEl.innerText = currentRate.value_inc_vat.toFixed(0);
     headlineUnitEl.innerText = 'p/kWh';
     slotInfoEl.innerText = cheapestWindow.text;
     slotInfoEl.dataset.baseText = cheapestWindow.text;
