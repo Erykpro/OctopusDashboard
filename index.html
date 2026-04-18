@@ -2,76 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Octopus Agile Dashboard</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#111827">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            transition: background-color 0.8s ease-in-out;
-            /* Prevent screen burn-in on Android dashboards by ensuring no harsh white elements */
-            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        :root {
+            color-scheme: dark;
         }
-        /* Hide scrollbar for dashboard aesthetic */
-        ::-webkit-scrollbar { display: none; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 28%),
+                linear-gradient(180deg, #1b1b1f 0%, #141417 52%, #101012 100%);
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .bar-blue { background-color: #3b82f6; }
+        .bar-green { background-color: #11d86f; }
+        .bar-yellow { background-color: #facc15; }
+        .bar-orange { background-color: #f97316; }
+        .bar-red { background-color: #ef4444; }
+
+        .widget-shell {
+            background:
+                linear-gradient(180deg, rgba(42, 42, 46, 0.96) 0%, rgba(26, 26, 30, 0.98) 100%);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.14),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .frost-panel {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            .widget-shell {
+                padding: 0.85rem 1rem;
+            }
+
+            .frost-panel {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-center items-center text-white overflow-hidden bg-gray-900 font-sans">
+<body class="min-h-screen text-white">
+    <div class="widget-shell relative flex min-h-screen w-full flex-col overflow-hidden px-4 py-4 sm:px-5 sm:py-5">
+            <div class="relative z-10 flex items-start justify-between gap-4">
+                <div>
+                    <div class="text-sm font-medium tracking-[0.18em] text-white/35 uppercase">Octopus Agile Dashboard</div>
+                </div>
 
-    <!-- SETUP VIEW (Hidden if credentials exist) -->
-    <div id="setup-view" class="hidden flex-col items-center w-full max-w-sm px-6">
-        <h1 class="text-3xl font-bold mb-6 text-center">Agile Dashboard</h1>
-        <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full">
-            <label class="block text-sm font-medium mb-2">Octopus API Key</label>
-            <input type="text" id="api-key" class="w-full p-3 mb-4 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none shadow-none" placeholder="sk_live_...">
-            
-            <label class="block text-sm font-medium mb-2">Account Number</label>
-            <input type="text" id="account-num" class="w-full p-3 mb-6 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none shadow-none" placeholder="A-12345678">
-            
-            <button id="save-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded transition-colors text-shadow-none">
-                Save & Start
-            </button>
-        </div>
-        <p class="text-xs text-gray-400 mt-4 text-center">Credentials are stored locally on this device only.</p>
-    </div>
-
-    <!-- DASHBOARD VIEW -->
-    <div id="dashboard-view" class="hidden flex-row justify-between items-center h-screen w-screen bg-transparent px-10 py-6 overflow-hidden">
-        
-        <div class="flex flex-col items-center justify-center w-1/2 h-full">
-            <div class="flex items-baseline">
-                <span id="current-price" class="text-[10rem] font-black leading-none drop-shadow-2xl tracking-tighter">-.-</span>
-            </div>
-            <div class="text-3xl mt-1 font-bold opacity-90">p/kWh</div>
-            <div id="last-updated" class="text-sm mt-3 opacity-75">Last Updated: --:--</div>
-        </div>
-
-        <div class="flex flex-col items-start justify-center w-1/2 h-full gap-5 pl-10 border-l-2 border-white/20">
-            
-            <div class="w-full text-2xl font-medium bg-black/20 px-6 py-5 rounded-2xl backdrop-blur-md shadow-lg border border-white/10">
-                <div class="opacity-80 text-lg uppercase tracking-wider mb-1">Next Rate</div>
-                <span id="next-price" class="font-bold text-4xl">--</span> p 
-                <span class="text-xl opacity-90 ml-2">at <span id="next-time">--:--</span></span>
-            </div>
-            
-            <div class="w-full text-2xl font-medium bg-black/20 px-6 py-5 rounded-2xl backdrop-blur-md shadow-lg border border-white/10">
-                <div class="opacity-80 text-lg uppercase tracking-wider mb-1">Next Cheapest Slot:</div>
-                <span id="cheapest-slot" class="font-bold text-4xl">--:--</span>
+                <div class="flex shrink-0 gap-2">
+                    <button id="refresh-btn" class="action-btn flex h-11 w-11 items-center justify-center rounded-full text-white/72 transition" aria-label="Refresh">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                            <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                        </svg>
+                    </button>
+                    <button id="reset-btn" class="action-btn flex h-11 w-11 items-center justify-center rounded-full text-white/52 transition" aria-label="Reset">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 4v1"></path>
+                            <path d="M12 19v1"></path>
+                            <path d="M4.22 4.22l.7.7"></path>
+                            <path d="M18.36 18.36l.7.7"></path>
+                            <path d="M1 12h1"></path>
+                            <path d="M22 12h1"></path>
+                            <path d="M4.22 19.78l.7-.7"></path>
+                            <path d="M18.36 5.64l.7-.7"></path>
+                            <circle cx="12" cy="12" r="5"></circle>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-        </div>
+            <section class="relative z-10 mt-4 flex-1">
+                <div class="frost-panel flex h-full overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6">
+                    <div class="flex h-full w-full flex-col gap-4">
+                        <div class="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-stretch">
+                            <div>
+                                <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Current rate</div>
+                                <div id="headline-text" class="mt-1 text-[2.75rem] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[4rem]">
+                                    Loading live prices...
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Cheapest Slot</div>
+                                <div class="mt-3 inline-flex max-w-full items-center gap-3 rounded-[1.25rem] border border-white/[0.08] bg-white/[0.06] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                                    <div id="slot-countdown" class="text-[1.25rem] font-semibold leading-none tracking-[-0.035em] text-white sm:text-[1.45rem]"></div>
+                                    <div class="text-white/34">|</div>
+                                    <div id="slot-info" class="text-[1.2rem] font-semibold leading-none tracking-[-0.03em] text-white/82 sm:text-[1.35rem]">
+                                        Fetching rate data...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-        <button id="refresh-btn" class="absolute top-6 right-6 opacity-40 hover:opacity-100 transition-opacity bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm text-sm font-medium flex items-center gap-2 cursor-pointer z-50 text-shadow-none" onclick="fetchData()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-            </svg>
-            Refresh
-        </button>
-
-        <button id="reset-btn" class="absolute bottom-6 right-6 opacity-20 hover:opacity-100 text-xs text-shadow-none">⚙️ Reset</button>
-
+                        <div class="overflow-hidden rounded-[1.6rem] border border-white/[0.04] bg-black/18 px-4 pb-8 pt-4 sm:px-5">
+                            <div id="rate-chart" class="relative mt-1 flex h-[42vh] min-h-[11rem] max-h-[18rem] w-full items-end gap-[3px] border-b border-white/10 pb-8"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
     </div>
 
     <script src="app.js"></script>
