@@ -1,220 +1,240 @@
-// DOM Elements
-const setupView = document.getElementById('setup-view');
-const dashboardView = document.getElementById('dashboard-view');
-const currentPriceEl = document.getElementById('current-price');
-const nextTimeEl = document.getElementById('next-time');
-const nextPriceEl = document.getElementById('next-price');
-const lastUpdatedEl = document.getElementById('last-updated');
-const cheapestSlotEl = document.getElementById('cheapest-slot');
+const headlineText = document.getElementById('headline-text');
+const chartContainer = document.getElementById('rate-chart');
+const slotInfoEl = document.getElementById('slot-info');
+const slotCountdownEl = document.getElementById('slot-countdown');
+const refreshBtn = document.getElementById('refresh-btn');
+const resetBtn = document.getElementById('reset-btn');
 
-// Your specific Regional Agile Tariff (Region M)
-const TARIFF_CODE = "E-1R-AGILE-24-10-01-M";
-const PRODUCT_CODE = "AGILE-24-10-01";
-
-// App State
-let config = {
-    apiKey: localStorage.getItem('octoApiKey') || ''
-};
+const TARIFF_CODE = 'E-1R-AGILE-24-10-01-M';
+const PRODUCT_CODE = 'AGILE-24-10-01';
+const MAX_CHART_SLOTS = 16;
 
 function init() {
     registerServiceWorker();
-    // We no longer need the Account Number, just the API key
-    if (!config.apiKey) {
-        setupView.classList.remove('hidden');
-        dashboardView.classList.add('hidden');
-        document.body.style.backgroundColor = '#111827';
-    } else {
-        setupView.classList.add('hidden');
-        dashboardView.classList.remove('hidden');
-        dashboardView.style.display = 'flex';
-        fetchData();
-    }
+    refreshBtn?.addEventListener('click', fetchData);
+    resetBtn?.addEventListener('click', resetApp);
+    fetchData();
 }
 
-document.getElementById('save-btn').addEventListener('click', () => {
-    config.apiKey = document.getElementById('api-key').value.trim();
-    if (!config.apiKey) return alert("Enter your API Key.");
-
-    localStorage.setItem('octoApiKey', config.apiKey);
-    init();
-});
-
-document.getElementById('reset-btn').addEventListener('click', () => {
+function resetApp() {
     localStorage.clear();
-    location.reload();
-});
 
-// Ensure data refreshes when the device wakes up or the tab is brought to front
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        console.log("Tab became visible - refreshing data.");
-        fetchData();
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(reg => reg.unregister());
+        });
     }
-});
+
+    if ('caches' in window) {
+        caches.keys().then(keys => Promise.all(keys.map(key => caches.delete(key))));
+    }
+
+    location.reload();
+}
 
 async function fetchData() {
+    headlineText.innerText = 'Loading live rates...';
+    slotInfoEl.innerText = 'Querying Octopus API...';
+    slotCountdownEl.innerText = '';
+    chartContainer.innerHTML = '';
+
     try {
         const now = new Date();
-        const periodFrom = new Date(now.getTime() - (3600 * 1000)).toISOString().split('.')[0] + 'Z';
-        const periodTo = new Date(now.getTime() + (86400 * 1000)).toISOString().split('.')[0] + 'Z';
-        
-        // Directly fetch your regional Agile prices
+        const periodFrom = new Date(now.getTime() - 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
+        const periodTo = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('.')[0] + 'Z';
         const ratesUrl = `https://api.octopus.energy/v1/products/${PRODUCT_CODE}/electricity-tariffs/${TARIFF_CODE}/standard-unit-rates/?period_from=${periodFrom}&period_to=${periodTo}`;
-        
-        const rateRes = await fetch(ratesUrl);
-        if (!rateRes.ok) throw new Error(`Rates fetch failed: HTTP ${rateRes.status}`);
-        
-        const rateData = await rateRes.json();
-        updateUI(rateData.results);
-        scheduleNextUpdate();
 
+        const response = await fetch(ratesUrl);
+        if (!response.ok) {
+            throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        const rates = Array.isArray(data.results) ? data.results : [];
+
+        if (!rates.length) {
+            throw new Error('No rates returned from API');
+        }
+
+        updateUI(rates);
+        scheduleNextUpdate();
     } catch (error) {
         console.error(error);
-        currentPriceEl.innerText = "ERR";
-        currentPriceEl.style.fontSize = "8rem";
-        setTimeout(fetchData, 60000); 
+        headlineText.innerText = 'Unable to load live rates.';
+        slotInfoEl.innerText = 'Please retry or check network access.';
+        slotCountdownEl.innerText = '';
+        chartContainer.innerHTML = '<div class="text-sm text-gray-400">Failed to fetch Octopus pricing.</div>';
     }
 }
 
 function updateUI(rates) {
     const now = new Date();
-    lastUpdatedEl.innerText = `Last Updated: ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    const sortedRates = [...rates].sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+    const currentRate = sortedRates.find(rate => {
+        const from = new Date(rate.valid_from);
+        const to = new Date(rate.valid_to);
+        return now >= from && now < to;
+    }) || sortedRates[0];
 
-    if (!rates || rates.length === 0) {
-        currentPriceEl.innerText = "N/A";
+    const cheapestWindow = findCheapestDaytime3HourSlot(sortedRates);
+
+    headlineText.innerText = formatPrice(currentRate.value_inc_vat);
+    slotInfoEl.innerText = cheapestWindow.text;
+    slotInfoEl.dataset.baseText = cheapestWindow.text;
+    startCountdown(cheapestWindow.start);
+
+    renderChartRates(sortedRates, now, currentRate);
+}
+
+function formatPrice(value) {
+    return `${value.toFixed(2)}p/kWh`;
+}
+
+function formatTime(isoString) {
+    return new Date(isoString).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatSlotTime(date) {
+    const minutes = date.getMinutes();
+    return date.toLocaleTimeString('en-GB', {
+        hour: 'numeric',
+        minute: minutes === 0 ? undefined : '2-digit',
+        hour12: true
+    }).replace(/\s/g, '').toLowerCase();
+}
+
+let countdownTimer = null;
+
+function startCountdown(startTime) {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+
+    if (!startTime) {
+        slotCountdownEl.innerText = '';
         return;
     }
 
-    const currentRateIndex = rates.findIndex(r => {
-        const validFrom = new Date(r.valid_from);
-        const validTo = new Date(r.valid_to); 
-        return now >= validFrom && now < validTo;
+    function updateCountdown() {
+        const now = new Date();
+        const diff = startTime - now;
+
+        if (diff <= 0) {
+            clearInterval(countdownTimer);
+            slotCountdownEl.innerText = '';
+            return;
+        }
+
+        const hours = Math.floor(diff / (60 * 60 * 1000));
+        slotCountdownEl.innerText = ` In ${hours}h`;
+    }
+
+    updateCountdown();
+    countdownTimer = setInterval(updateCountdown, 60000);
+}
+
+function renderChartRates(rates, now, currentRate) {
+    const currentIndex = rates.findIndex(rate => {
+        const from = new Date(rate.valid_from);
+        const to = new Date(rate.valid_to);
+        return now >= from && now < to;
     });
 
-    if (currentRateIndex === -1) {
-        currentPriceEl.innerText = "N/A";
+    const currentIncluded = currentIndex !== -1;
+    let chartRates;
+    if (currentIncluded) {
+        chartRates = rates.slice(currentIndex, currentIndex + MAX_CHART_SLOTS);
+    } else {
+        chartRates = rates.filter(rate => new Date(rate.valid_from) >= now).slice(0, MAX_CHART_SLOTS);
+    }
+
+    if (!chartRates.length) {
+        chartRates = rates.slice(0, MAX_CHART_SLOTS);
+    }
+
+    if (!chartRates.length) {
+        chartContainer.innerHTML = '<div class="text-sm text-gray-400">No chart data available.</div>';
         return;
     }
 
-    const currentRate = rates[currentRateIndex];
-    const price = currentRate.value_inc_vat;
-    currentPriceEl.innerText = Math.ceil(price);
-    
-    const nextRate = rates[currentRateIndex - 1]; 
-    if (nextRate) {
-        nextTimeEl.innerText = new Date(nextRate.valid_from).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        nextPriceEl.innerText = nextRate.value_inc_vat.toFixed(1);
-    } else {
-        nextTimeEl.innerText = "later";
-        nextPriceEl.innerText = "TBC";
-    }
+    const values = chartRates.map(rate => rate.value_inc_vat);
+    const maxPrice = Math.max(...values, 1);
 
-    // Calculate cheapest upcoming 3-hour window
-    cheapestSlotEl.innerText = findCheapestDaytime3HourSlot(rates);
+    chartContainer.innerHTML = '';
 
-    // Calculate daily average and apply dynamic colors
-    const dailyAverage = calculateDailyAverage(rates);
-    applyRAGStatus(price, dailyAverage);
+    chartRates.forEach((rate, index) => {
+        const height = Math.max(10, (rate.value_inc_vat / maxPrice) * 100);
+        const colorClass = getTierClass(rate.value_inc_vat);
+        const label = (currentIncluded && index === 0) ? 'NOW' : formatTime(rate.valid_from);
+
+        const bar = document.createElement('div');
+        bar.className = `relative flex-1 rounded-t-sm z-10 ${colorClass}`;
+        bar.style.height = `${height}%`;
+        bar.style.minWidth = '0';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[11px] whitespace-nowrap';
+        labelEl.textContent = label;
+        bar.appendChild(labelEl);
+
+        chartContainer.appendChild(bar);
+    });
+}
+
+function getTierClass(price) {
+    if (price <= 15.9) return 'bar-green';
+    if (price <= 20) return 'bar-yellow';
+    if (price <= 25) return 'bar-orange';
+    return 'bar-red';
 }
 
 function findCheapestDaytime3HourSlot(rates) {
     const now = new Date();
-    
-    // 1. Filter: Future rates ONLY, and strictly between 07:00 and 19:00
-    const futureDaytimeRates = rates.filter(r => {
-        const validFrom = new Date(r.valid_from);
-        const hour = validFrom.getHours();
-        return validFrom > now && hour >= 7 && hour < 19;
-    });
+    const daytimeRates = rates.filter(rate => {
+        const from = new Date(rate.valid_from);
+        const hour = from.getHours();
+        return from > now && hour >= 7 && hour < 19;
+    }).sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
 
-    // 2. Sort chronologically
-    futureDaytimeRates.sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+    let bestWindow = null;
+    let bestSum = Infinity;
 
-    let minPrice = Infinity;
-    let bestStartTime = null;
-
-    // 3. Sliding Window: Check consecutive blocks of 6 slots (3 hours)
-    for (let i = 0; i <= futureDaytimeRates.length - 6; i++) {
-        const startSlot = new Date(futureDaytimeRates[i].valid_from);
-        const endSlot = new Date(futureDaytimeRates[i + 5].valid_from);
-        
-        // Safety check: Ensure the 3-hour block falls on the exact same day
-        if (startSlot.getDate() !== endSlot.getDate()) continue;
-
-        let windowSum = 0;
-        for (let j = 0; j < 6; j++) {
-            windowSum += futureDaytimeRates[i + j].value_inc_vat;
-        }
-
-        if (windowSum < minPrice) {
-            minPrice = windowSum;
-            bestStartTime = startSlot;
+    for (let i = 0; i <= daytimeRates.length - 6; i++) {
+        const window = daytimeRates.slice(i, i + 6);
+        const windowSum = window.reduce((sum, entry) => sum + entry.value_inc_vat, 0);
+        if (windowSum < bestSum) {
+            bestSum = windowSum;
+            bestWindow = window;
         }
     }
 
-    if (!bestStartTime) return "--:--";
-
-    // 4. Format the output with AM/PM and end time
-    const startTimeStr = bestStartTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
-    
-    const endTime = new Date(bestStartTime.getTime() + 3 * 60 * 60 * 1000);
-    const endTimeStr = endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
-    
-    const isTomorrow = bestStartTime.getDate() !== now.getDate();
-    const prefix = isTomorrow ? `Tomorrow ${startTimeStr} - ${endTimeStr}` : `${startTimeStr} - ${endTimeStr}`;
-    
-    return prefix;
-}
-
-function calculateDailyAverage(rates) {
-    const today = new Date().toDateString();
-    
-    // Filter the array to only include slots for the current calendar day
-    const todaysRates = rates.filter(r => new Date(r.valid_from).toDateString() === today);
-    
-    // Fallback just in case the array is empty
-    if (todaysRates.length === 0) return 15; 
-
-    // Sum all the rates and divide by the number of slots
-    const sum = todaysRates.reduce((acc, curr) => acc + curr.value_inc_vat, 0);
-    return sum / todaysRates.length;
-}
-
-function applyRAGStatus(price, average) {
-    const body = document.body;
-    
-    // Remove old classes
-    body.classList.remove(
-        'bg-blue-600', 'bg-green-500', 'bg-yellow-500', 
-        'bg-orange-500', 'bg-red-600', 'bg-gray-900'
-    );
-
-    // Dynamic 5-Tier Logic
-    if (price < 0) {
-        body.classList.add('bg-blue-600'); // Plunge: Always blue
-    } else if (price <= average * 0.8) {
-        body.classList.add('bg-green-500'); // Cheap: 20% below average
-    } else if (price <= average * 1.2) {
-        body.classList.add('bg-yellow-500'); // Fair: Around the average
-    } else if (price <= average * 1.5) {
-        body.classList.add('bg-orange-500'); // High: 50% above average
-    } else {
-        body.classList.add('bg-red-600'); // Peak: Very expensive
+    if (!bestWindow) {
+        return { text: 'No daytime 3h window', start: null };
     }
+
+    const start = new Date(bestWindow[0].valid_from);
+    const end = new Date(bestWindow[bestWindow.length - 1].valid_to);
+    const isTomorrow = start.toDateString() !== now.toDateString();
+    const slotText = `${formatSlotTime(start)} - ${formatSlotTime(end)}`;
+
+    const text = isTomorrow
+        ? `Tomorrow ${slotText}`
+        : slotText;
+
+    return { text, start };
 }
 
 function scheduleNextUpdate() {
     const now = new Date();
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
-    let minutesToNext = (minutes < 30) ? 30 - minutes : 60 - minutes;
-    let msToNext = ((minutesToNext * 60) - seconds) * 1000 - now.getMilliseconds() + 5000; 
-    setTimeout(fetchData, msToNext);
+    const nextHalfHour = new Date(now);
+    nextHalfHour.setMinutes(now.getMinutes() < 30 ? 30 : 60, 5, 0);
+    const delay = nextHalfHour.getTime() - now.getTime();
+    setTimeout(fetchData, delay);
 }
 
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(err => console.error("SW failed:", err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.error('Sw registration failed', err));
     }
 }
 
