@@ -103,6 +103,21 @@ function formatSlotTime(date) {
     }).replace(/\s/g, '').toLowerCase();
 }
 
+function formatCountdownHours(hours) {
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+}
+
+function formatCountdown(diffMs) {
+    const totalMinutes = Math.floor(diffMs / (60 * 1000));
+
+    if (totalMinutes < 60) {
+        return `${totalMinutes} ${totalMinutes === 1 ? 'minute' : 'minutes'}`;
+    }
+
+    const hours = Math.floor(diffMs / (60 * 60 * 1000));
+    return formatCountdownHours(hours);
+}
+
 let countdownTimer = null;
 
 function startCountdown(startTime) {
@@ -125,8 +140,7 @@ function startCountdown(startTime) {
             return;
         }
 
-        const hours = Math.floor(diff / (60 * 60 * 1000));
-        slotCountdownEl.innerText = ` In ${hours}h`;
+        slotCountdownEl.innerText = `In ${formatCountdown(diff)}`;
     }
 
     updateCountdown();
@@ -173,7 +187,7 @@ function renderChartRates(rates, now, currentRate) {
         bar.style.minWidth = '0';
 
         const labelEl = document.createElement('span');
-        labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[11px] whitespace-nowrap';
+        labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[12px] whitespace-nowrap';
         labelEl.textContent = label;
         bar.appendChild(labelEl);
 
