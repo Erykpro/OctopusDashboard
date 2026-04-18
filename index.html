@@ -100,8 +100,9 @@
                         <div class="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-stretch">
                             <div>
                                 <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Current rate</div>
-                                <div id="headline-text" class="mt-1 text-[2.75rem] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[4rem]">
-                                    Loading live prices...
+                                <div id="headline-text" class="mt-1 flex items-baseline gap-2 text-white">
+                                    <span id="headline-value" class="text-[2.75rem] font-semibold leading-none tracking-[-0.06em] sm:text-[4rem]">--</span>
+                                    <span id="headline-unit" class="text-[1.05rem] font-medium leading-none tracking-[-0.03em] text-white/68 sm:text-[1.35rem]">p/kWh</span>
                                 </div>
                             </div>
                             <div class="justify-self-end">
@@ -117,7 +118,9 @@
                         </div>
 
                         <div class="overflow-hidden rounded-[1.6rem] border border-white/[0.04] bg-black/18 px-4 pb-8 pt-4 sm:px-5">
-                            <div id="rate-chart" class="relative mt-1 flex h-[42vh] min-h-[11rem] max-h-[18rem] w-full items-end gap-[3px] border-b border-white/10 pb-8"></div>
+                            <div class="overflow-x-auto overflow-y-hidden">
+                                <div id="rate-chart" class="relative mt-1 inline-flex h-[42vh] min-h-[11rem] max-h-[18rem] min-w-full items-end gap-[3px] border-b border-white/10 pb-8"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

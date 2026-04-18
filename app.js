@@ -1,4 +1,6 @@
 const headlineText = document.getElementById('headline-text');
+const headlineValueEl = document.getElementById('headline-value');
+const headlineUnitEl = document.getElementById('headline-unit');
 const chartContainer = document.getElementById('rate-chart');
 const slotInfoEl = document.getElementById('slot-info');
 const slotCountdownEl = document.getElementById('slot-countdown');
@@ -7,7 +9,6 @@ const resetBtn = document.getElementById('reset-btn');
 
 const TARIFF_CODE = 'E-1R-AGILE-24-10-01-M';
 const PRODUCT_CODE = 'AGILE-24-10-01';
-const MAX_CHART_SLOTS = 16;
 
 function init() {
     registerServiceWorker();
@@ -33,7 +34,8 @@ function resetApp() {
 }
 
 async function fetchData() {
-    headlineText.innerText = 'Loading live rates...';
+    headlineValueEl.innerText = '--';
+    headlineUnitEl.innerText = 'Loading...';
     slotInfoEl.innerText = 'Querying Octopus API...';
     slotCountdownEl.innerText = '';
     chartContainer.innerHTML = '';
@@ -60,7 +62,8 @@ async function fetchData() {
         scheduleNextUpdate();
     } catch (error) {
         console.error(error);
-        headlineText.innerText = 'Unable to load live rates.';
+        headlineValueEl.innerText = '--';
+        headlineUnitEl.innerText = 'p/kWh';
         slotInfoEl.innerText = 'Please retry or check network access.';
         slotCountdownEl.innerText = '';
         chartContainer.innerHTML = '<div class="text-sm text-gray-400">Failed to fetch Octopus pricing.</div>';
@@ -78,16 +81,13 @@ function updateUI(rates) {
 
     const cheapestWindow = findCheapestDaytime3HourSlot(sortedRates);
 
-    headlineText.innerText = formatPrice(currentRate.value_inc_vat);
+    headlineValueEl.innerText = currentRate.value_inc_vat.toFixed(2);
+    headlineUnitEl.innerText = 'p/kWh';
     slotInfoEl.innerText = cheapestWindow.text;
     slotInfoEl.dataset.baseText = cheapestWindow.text;
     startCountdown(cheapestWindow.start);
 
     renderChartRates(sortedRates, now, currentRate);
-}
-
-function formatPrice(value) {
-    return `${value.toFixed(2)}p/kWh`;
 }
 
 function formatTime(isoString) {
@@ -157,13 +157,13 @@ function renderChartRates(rates, now, currentRate) {
     const currentIncluded = currentIndex !== -1;
     let chartRates;
     if (currentIncluded) {
-        chartRates = rates.slice(currentIndex, currentIndex + MAX_CHART_SLOTS);
+        chartRates = rates.slice(currentIndex);
     } else {
-        chartRates = rates.filter(rate => new Date(rate.valid_from) >= now).slice(0, MAX_CHART_SLOTS);
+        chartRates = rates.filter(rate => new Date(rate.valid_from) >= now);
     }
 
     if (!chartRates.length) {
-        chartRates = rates.slice(0, MAX_CHART_SLOTS);
+        chartRates = rates.slice(0);
     }
 
     if (!chartRates.length) {
@@ -182,9 +182,9 @@ function renderChartRates(rates, now, currentRate) {
         const label = (currentIncluded && index === 0) ? 'NOW' : formatTime(rate.valid_from);
 
         const bar = document.createElement('div');
-        bar.className = `relative flex-1 rounded-t-sm z-10 ${colorClass}`;
+        bar.className = `relative shrink-0 rounded-t-sm z-10 ${colorClass}`;
         bar.style.height = `${height}%`;
-        bar.style.minWidth = '0';
+        bar.style.width = '3.8rem';
 
         const labelEl = document.createElement('span');
         labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[12px] whitespace-nowrap';
