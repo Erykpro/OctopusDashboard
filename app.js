@@ -14,6 +14,7 @@ function init() {
     registerServiceWorker();
     refreshBtn?.addEventListener('click', fetchData);
     resetBtn?.addEventListener('click', resetApp);
+    setupChartInteractions();
     fetchData();
 }
 
@@ -31,6 +32,33 @@ function resetApp() {
     }
 
     location.reload();
+}
+
+let interactionTimeout = null;
+
+function setupChartInteractions() {
+    const events = ['touchstart', 'touchmove', 'click', 'scroll', 'mousemove'];
+    events.forEach(event => {
+        chartContainer.addEventListener(event, handleChartInteraction, { passive: true });
+    });
+}
+
+function handleChartInteraction() {
+    const labels = chartContainer.querySelectorAll('.rate-label');
+    if (!labels.length) return;
+
+    labels.forEach(el => {
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+    });
+
+    if (interactionTimeout) clearTimeout(interactionTimeout);
+    interactionTimeout = setTimeout(() => {
+        labels.forEach(el => {
+            el.classList.remove('opacity-100');
+            el.classList.add('opacity-0');
+        });
+    }, 4000); // Rates disappear after 4 seconds of inactivity
 }
 
 async function fetchData() {
@@ -185,6 +213,11 @@ function renderChartRates(rates, now, currentRate) {
         bar.className = `relative shrink-0 rounded-t-sm z-10 ${colorClass}`;
         bar.style.height = `${height}%`;
         bar.style.width = '3.8rem';
+
+        const rateEl = document.createElement('span');
+        rateEl.className = 'rate-label absolute top-1 left-1/2 transform -translate-x-1/2 text-white text-[11px] font-medium opacity-0 transition-opacity duration-300 pointer-events-none';
+        rateEl.textContent = rate.value_inc_vat.toFixed(1);
+        bar.appendChild(rateEl);
 
         const labelEl = document.createElement('span');
         labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[12px] whitespace-nowrap';
