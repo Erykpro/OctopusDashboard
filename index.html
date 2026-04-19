@@ -66,20 +66,20 @@
     </style>
 </head>
 <body class="bg-black min-h-screen p-0 text-white" style="background-color:#000;">
-    <div class="widget-shell relative flex min-h-dvh w-full flex-col overflow-hidden rounded-none px-0 pb-0 pt-0">
-            <section class="relative z-10 flex-1">
+    <div class="widget-shell relative flex min-h-[calc(100dvh+5.5rem)] w-full flex-col rounded-none px-0 pb-0 pt-0">
+            <section class="relative z-10 h-dvh flex-none">
                 <div class="frost-panel flex h-full overflow-hidden rounded-none p-0">
                     <div class="flex h-full w-full flex-col gap-3">
                         <div class="grid gap-3 px-3 pt-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-end">
-                            <div class="min-w-0">
-                                <div class="text-[15px] font-medium tracking-[-0.02em] text-white/58 md:text-[17px]">Current rate</div>
+                            <div class="min-w-0 pl-10 pt-4">
+                                <div class="text-[18px] font-medium tracking-[-0.02em] text-white/58 md:text-[20px]">Current rate</div>
                                 <div id="headline-text" class="mt-1 flex items-baseline gap-1.5 text-white md:gap-2">
                                     <span id="headline-value" class="text-[2.1rem] font-semibold leading-none tracking-[-0.06em] md:text-[4rem]">--</span>
                                     <span id="headline-unit" class="text-[0.95rem] font-medium leading-none tracking-[-0.03em] text-white/68 md:text-[1.35rem]">p/kWh</span>
                                 </div>
                             </div>
                             <div class="min-w-0 md:justify-self-end">
-                                <div class="pl-3 md:pl-5 text-[15px] font-medium tracking-[-0.02em] text-white/58 md:text-[17px]">Cheapest Slot</div>
+                                <div class="pl-3 md:pl-5 text-[15px] font-medium tracking-[-0.02em] text-white/58 md:text-[20px]">Cheapest Slot</div>
                                 <div class="mt-2 inline-flex max-w-full items-center gap-2 overflow-hidden rounded-[1rem] border border-white/[0.08] bg-white/[0.06] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:mt-3 md:gap-3 md:rounded-[1.25rem] md:px-5 md:py-3">
                                     <div id="slot-countdown" class="text-[0.92rem] font-semibold leading-none tracking-[-0.035em] text-white md:text-[1.45rem]"></div>
                                     <div class="text-white/34">|</div>
@@ -90,16 +90,16 @@
                             </div>
                         </div>
 
-                        <div class="flex-1 overflow-hidden rounded-none border-y border-white/[0.04] bg-black/18 px-2 pb-5 pt-2 md:rounded-[1.6rem] md:border md:px-4 md:pb-7 md:pt-3">
-                            <div class="overflow-x-auto overflow-y-hidden">
-                                <div id="rate-chart" class="relative mt-1 inline-flex h-[9.5rem] min-h-[9.5rem] min-w-full items-end gap-[1px] border-b border-white/10 pb-7 md:h-[38dvh] md:min-h-[8rem] md:max-h-[14rem] md:gap-[3px] md:pb-8"></div>
+                        <div class="flex-1 overflow-hidden rounded-none border-y border-white/[0.04] bg-black/18 px-2 pb-3 pt-2 md:rounded-[1.6rem] md:border md:px-4 md:pb-4 md:pt-3">
+                            <div class="flex h-full items-end overflow-x-auto overflow-y-hidden">
+                                <div id="rate-chart" class="relative inline-flex h-full min-h-[13rem] min-w-full items-end gap-[1px] border-b border-white/10 pb-7 md:gap-[3px] md:pb-8"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
-            <div class="pointer-events-none absolute inset-x-3 bottom-3 z-20 hidden justify-end gap-2 md:flex md:inset-x-5 md:bottom-4">
-                <button id="refresh-btn" class="pointer-events-auto action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/72 transition md:h-10 md:w-10" aria-label="Refresh">
+            <div class="flex justify-end gap-2 px-3 py-4 md:px-5 md:py-5">
+                <button id="refresh-btn" class="action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/72 transition md:h-10 md:w-10" aria-label="Refresh">
                     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 4 23 10 17 10"></polyline>
                         <polyline points="1 20 1 14 7 14"></polyline>
@@ -107,7 +107,7 @@
                         <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
                     </svg>
                 </button>
-                <button id="reset-btn" class="pointer-events-auto action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/52 transition md:h-10 md:w-10" aria-label="Reset">
+                <button id="reset-btn" class="action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/52 transition md:h-10 md:w-10" aria-label="Reset">
                     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 4v1"></path>
                         <path d="M12 19v1"></path>
