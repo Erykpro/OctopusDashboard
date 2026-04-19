@@ -18,3 +18,5 @@ Perfect for wall-mounted tablets, smart home kiosks, or quick mobile access!
 - HTML / Vanilla JavaScript
 - Tailwind CSS (via CDN)
 - Octopus Energy Public API
+
+<img width="1658" height="581" alt="Screenshot 2026-04-19 at 20 04 35" src="https://github.com/user-attachments/assets/9d8182db-92a7-418d-9260-54e25a9ca0d9" />
