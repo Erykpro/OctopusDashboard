@@ -65,63 +65,62 @@
         }
     </style>
 </head>
-<body class="h-dvh overflow-hidden text-white">
-    <div class="widget-shell relative flex h-dvh w-full flex-col overflow-hidden px-4 pb-4 pt-2 sm:px-5 sm:pb-5 sm:pt-3">
+<body class="bg-black min-h-screen p-0 text-white" style="background-color:#000;">
+    <div class="widget-shell relative flex min-h-dvh w-full flex-col overflow-hidden rounded-none px-0 pb-0 pt-0">
             <section class="relative z-10 flex-1">
-                <div class="frost-panel flex h-full overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6">
+                <div class="frost-panel flex h-full overflow-hidden rounded-none p-0">
                     <div class="flex h-full w-full flex-col gap-3">
-                        <div class="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] xl:items-stretch">
-                            <div>
-                                <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Current rate</div>
-                                <div id="headline-text" class="mt-1 flex items-baseline gap-2 text-white">
-                                    <span id="headline-value" class="text-[2.75rem] font-semibold leading-none tracking-[-0.06em] sm:text-[4rem]">--</span>
-                                    <span id="headline-unit" class="text-[1.05rem] font-medium leading-none tracking-[-0.03em] text-white/68 sm:text-[1.35rem]">p/kWh</span>
+                        <div class="grid gap-3 px-3 pt-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-end">
+                            <div class="min-w-0">
+                                <div class="text-[15px] font-medium tracking-[-0.02em] text-white/58 md:text-[17px]">Current rate</div>
+                                <div id="headline-text" class="mt-1 flex items-baseline gap-1.5 text-white md:gap-2">
+                                    <span id="headline-value" class="text-[2.1rem] font-semibold leading-none tracking-[-0.06em] md:text-[4rem]">--</span>
+                                    <span id="headline-unit" class="text-[0.95rem] font-medium leading-none tracking-[-0.03em] text-white/68 md:text-[1.35rem]">p/kWh</span>
                                 </div>
                             </div>
-                            <div class="justify-self-end">
-                                <div class="text-[17px] font-medium tracking-[-0.02em] text-white/58">Cheapest Slot</div>
-                                <div class="mt-3 inline-flex max-w-full items-center gap-3 rounded-[1.25rem] border border-white/[0.08] bg-white/[0.06] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                                    <div id="slot-countdown" class="text-[1.25rem] font-semibold leading-none tracking-[-0.035em] text-white sm:text-[1.45rem]"></div>
+                            <div class="min-w-0 md:justify-self-end">
+                                <div class="pl-3 md:pl-5 text-[15px] font-medium tracking-[-0.02em] text-white/58 md:text-[17px]">Cheapest Slot</div>
+                                <div class="mt-2 inline-flex max-w-full items-center gap-2 overflow-hidden rounded-[1rem] border border-white/[0.08] bg-white/[0.06] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] md:mt-3 md:gap-3 md:rounded-[1.25rem] md:px-5 md:py-3">
+                                    <div id="slot-countdown" class="text-[0.92rem] font-semibold leading-none tracking-[-0.035em] text-white md:text-[1.45rem]"></div>
                                     <div class="text-white/34">|</div>
-                                    <div id="slot-info" class="text-[1.2rem] font-semibold leading-none tracking-[-0.03em] text-white/82 sm:text-[1.35rem]">
+                                    <div id="slot-info" class="truncate text-[0.92rem] font-semibold leading-none tracking-[-0.03em] text-white/82 md:text-[1.35rem]">
                                         Fetching rate data...
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex-1 overflow-hidden rounded-[1.6rem] border border-white/[0.04] bg-black/18 px-4 pb-7 pt-3 sm:px-5">
+                        <div class="flex-1 overflow-hidden rounded-none border-y border-white/[0.04] bg-black/18 px-2 pb-5 pt-2 md:rounded-[1.6rem] md:border md:px-4 md:pb-7 md:pt-3">
                             <div class="overflow-x-auto overflow-y-hidden">
-                                <div id="rate-chart" class="relative mt-1 inline-flex h-[34dvh] min-h-[8rem] max-h-[14rem] min-w-full items-end gap-[3px] border-b border-white/10 pb-8 sm:h-[38dvh]"></div>
+                                <div id="rate-chart" class="relative mt-1 inline-flex h-[9.5rem] min-h-[9.5rem] min-w-full items-end gap-[1px] border-b border-white/10 pb-7 md:h-[38dvh] md:min-h-[8rem] md:max-h-[14rem] md:gap-[3px] md:pb-8"></div>
                             </div>
-                        </div>
-
-                        <div class="flex justify-end gap-2 pt-1">
-                            <button id="refresh-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/72 transition" aria-label="Refresh">
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <polyline points="1 20 1 14 7 14"></polyline>
-                                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
-                                    <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
-                                </svg>
-                            </button>
-                            <button id="reset-btn" class="action-btn flex h-10 w-10 items-center justify-center rounded-full text-white/52 transition" aria-label="Reset">
-                                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 4v1"></path>
-                                    <path d="M12 19v1"></path>
-                                    <path d="M4.22 4.22l.7.7"></path>
-                                    <path d="M18.36 18.36l.7.7"></path>
-                                    <path d="M1 12h1"></path>
-                                    <path d="M22 12h1"></path>
-                                    <path d="M4.22 19.78l.7-.7"></path>
-                                    <path d="M18.36 5.64l.7-.7"></path>
-                                    <circle cx="12" cy="12" r="5"></circle>
-                                </svg>
-                            </button>
                         </div>
                     </div>
                 </div>
             </section>
+            <div class="pointer-events-none absolute inset-x-3 bottom-3 z-20 hidden justify-end gap-2 md:flex md:inset-x-5 md:bottom-4">
+                <button id="refresh-btn" class="pointer-events-auto action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/72 transition md:h-10 md:w-10" aria-label="Refresh">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                        <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"></path>
+                    </svg>
+                </button>
+                <button id="reset-btn" class="pointer-events-auto action-btn flex h-9 w-9 items-center justify-center rounded-full text-white/52 transition md:h-10 md:w-10" aria-label="Reset">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 4v1"></path>
+                        <path d="M12 19v1"></path>
+                        <path d="M4.22 4.22l.7.7"></path>
+                        <path d="M18.36 18.36l.7.7"></path>
+                        <path d="M1 12h1"></path>
+                        <path d="M22 12h1"></path>
+                        <path d="M4.22 19.78l.7-.7"></path>
+                        <path d="M18.36 5.64l.7-.7"></path>
+                        <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                </button>
+            </div>
     </div>
 
     <script src="app.js"></script>
