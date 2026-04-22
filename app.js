@@ -107,13 +107,41 @@ function updateUI(rates) {
         return now >= from && now < to;
     }) || sortedRates[0];
 
-    const cheapestWindow = findCheapestDaytime3HourSlot(sortedRates);
-
     headlineValueEl.innerText = currentRate.value_inc_vat.toFixed(0);
     headlineUnitEl.innerText = 'p/kWh';
-    slotInfoEl.innerText = cheapestWindow.text;
-    slotInfoEl.dataset.baseText = cheapestWindow.text;
-    startCountdown(cheapestWindow.start);
+
+    const freeWindowMessage = findNextFreeElectricityWindow(sortedRates);
+    const separator = slotCountdownEl.nextElementSibling;
+    const pillContainer = slotInfoEl.parentElement;
+    const cheapestSlotLabel = pillContainer.previousElementSibling;
+
+    if (freeWindowMessage) {
+        slotInfoEl.innerText = freeWindowMessage;
+        startCountdown(null); // Clear countdown timer
+        if (separator && separator.textContent.trim() === '|') separator.style.display = 'none';
+        
+        pillContainer.classList.remove('bg-white/[0.06]', 'border-white/[0.08]');
+        pillContainer.classList.add('bg-blue-500', 'border-blue-500');
+        slotInfoEl.classList.remove('text-white/82');
+        slotInfoEl.classList.add('text-white');
+        if (cheapestSlotLabel) cheapestSlotLabel.style.display = 'none';
+    } else {
+        const cheapestWindow = findCheapestDaytime3HourSlot(sortedRates);
+        slotInfoEl.innerText = cheapestWindow.text;
+        slotInfoEl.dataset.baseText = cheapestWindow.text;
+        startCountdown(cheapestWindow.start);
+        if (separator && separator.textContent.trim() === '|') separator.style.display = '';
+        
+        pillContainer.classList.add('bg-white/[0.06]', 'border-white/[0.08]');
+        pillContainer.classList.remove('bg-blue-500', 'border-blue-500');
+        slotInfoEl.classList.add('text-white/82');
+        slotInfoEl.classList.remove('text-white');
+        if (cheapestSlotLabel) cheapestSlotLabel.style.display = '';
+    }
+
+    // Clean up the old standalone free pill if it still exists in the DOM
+    const oldFreePill = document.getElementById('free-pill');
+    if (oldFreePill) oldFreePill.remove();
 
     renderChartRates(sortedRates, now, currentRate);
 }
@@ -200,39 +228,93 @@ function renderChartRates(rates, now, currentRate) {
     }
 
     const values = chartRates.map(rate => rate.value_inc_vat);
-    const maxPrice = Math.max(...values, 1);
+    const minPrice = Math.min(0, ...values);
+    const maxPrice = Math.max(1, ...values);
+    const range = maxPrice - minPrice;
+    const zeroLinePct = (Math.abs(minPrice) / range) * 100;
 
     chartContainer.innerHTML = '';
 
     chartRates.forEach((rate, index) => {
-        const height = Math.max(10, (rate.value_inc_vat / maxPrice) * 100);
-        const colorClass = getTierClass(rate.value_inc_vat);
+        const val = rate.value_inc_vat;
+        const heightPct = (Math.abs(val) / range) * 100;
+        const renderHeight = Math.max(2, heightPct); // Min 2% height so tiny rates stay visible
+
+        const colorClass = getTierClass(val);
         const label = (currentIncluded && index === 0) ? 'NOW' : formatTime(rate.valid_from);
 
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative shrink-0 h-full z-10';
+        wrapper.style.width = '3.8rem';
+
+        // If we have negative pricing, draw a subtle dashed zero line across the column
+        if (minPrice < 0) {
+            const zeroLine = document.createElement('div');
+            zeroLine.className = 'absolute left-0 right-0 border-t border-white/20 border-dashed z-0 pointer-events-none';
+            zeroLine.style.bottom = `${zeroLinePct}%`;
+            wrapper.appendChild(zeroLine);
+        }
+
         const bar = document.createElement('div');
-        bar.className = `relative shrink-0 rounded-t-sm z-10 ${colorClass}`;
-        bar.style.height = `${height}%`;
-        bar.style.width = '3.8rem';
+        bar.className = `absolute left-0 right-0 z-10 ${colorClass}`;
+        bar.style.height = `${renderHeight}%`;
+
+        if (val >= 0) {
+            bar.style.bottom = `${zeroLinePct}%`;
+            bar.classList.add('rounded-t-sm');
+        } else {
+            bar.style.top = `${100 - zeroLinePct}%`;
+            bar.classList.add('rounded-b-sm');
+        }
 
         const rateEl = document.createElement('span');
-        rateEl.className = 'rate-label absolute top-1 left-1/2 transform -translate-x-1/2 text-white text-[11px] font-medium opacity-0 transition-opacity duration-300 pointer-events-none';
-        rateEl.textContent = rate.value_inc_vat.toFixed(1);
+        const rateYClass = val >= 0 ? 'top-1' : 'bottom-1';
+        rateEl.className = `rate-label absolute ${rateYClass} left-1/2 transform -translate-x-1/2 text-white text-[11px] font-medium opacity-0 transition-opacity duration-300 pointer-events-none`;
+        rateEl.textContent = val.toFixed(1);
         bar.appendChild(rateEl);
 
         const labelEl = document.createElement('span');
         labelEl.className = 'absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-[12px] whitespace-nowrap';
         labelEl.textContent = label;
-        bar.appendChild(labelEl);
+        wrapper.appendChild(labelEl);
 
-        chartContainer.appendChild(bar);
+        wrapper.appendChild(bar);
+        chartContainer.appendChild(wrapper);
     });
 }
 
 function getTierClass(price) {
+    if (price < 0) return 'bar-blue';
     if (price <= 15.9) return 'bar-green';
     if (price <= 20) return 'bar-yellow';
     if (price <= 25) return 'bar-orange';
     return 'bar-red';
+}
+
+function findNextFreeElectricityWindow(rates) {
+    const now = new Date();
+    const futureFreeRates = rates.filter(rate => {
+        const from = new Date(rate.valid_from);
+        return from > now && rate.value_inc_vat < 0;
+    }).sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+
+    if (!futureFreeRates.length) return null;
+
+    const block = [futureFreeRates[0]];
+    for (let i = 1; i < futureFreeRates.length; i++) {
+        const prevTo = new Date(block[block.length - 1].valid_to).getTime();
+        const currFrom = new Date(futureFreeRates[i].valid_from).getTime();
+        if (currFrom === prevTo) {
+            block.push(futureFreeRates[i]);
+        } else {
+            break; // Stop at the end of the first contiguous block of negative pricing
+        }
+    }
+
+    const start = new Date(block[0].valid_from);
+    const end = new Date(block[block.length - 1].valid_to);
+    const isTomorrow = start.toDateString() !== now.toDateString();
+    return `Free Electricity! ${isTomorrow ? 'Tomorrow' : 'Today'} ${formatSlotTime(start)} - ${formatSlotTime(end)}`;
 }
 
 function findCheapestDaytime3HourSlot(rates) {
